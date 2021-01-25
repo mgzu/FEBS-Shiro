@@ -62,12 +62,13 @@ public class LimitAspect extends BaseAspectSupport {
         }
         ImmutableList<String> keys = ImmutableList.of(StringUtils.join(limitAnnotation.prefix() + "_", key, ip));
         String luaScript = buildLuaScript();
-        RedisScript<Number> redisScript = new DefaultRedisScript<>(luaScript, Number.class);
-        Number count = redisTemplate.execute(redisScript, keys, limitCount, limitPeriod);
-        log.info("IP:{} 第 {} 次访问key为 {}，描述为 [{}] 的接口", ip, count, keys, name);
+        RedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
+        Long count = redisTemplate.execute(redisScript, keys, limitCount, limitPeriod);
         if (count != null && count.intValue() <= limitCount) {
+            log.info("IP:{} 第 {} 次访问key为 {}，描述为 [{}] 的接口", ip, count, keys, name);
             return point.proceed();
         } else {
+            log.error("key为 {}，描述为 [{}] 的接口访问超出频率限制", keys, name);
             throw new LimitAccessException("接口访问超出频率限制");
         }
     }
